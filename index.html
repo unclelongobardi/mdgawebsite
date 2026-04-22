@@ -65,7 +65,7 @@
       align-items: center;
       gap: 28px;
       width: 100%;
-      max-width: 520px;
+      max-width: 680px;
       padding: 0 20px;
     }
 
@@ -139,7 +139,7 @@
     .contract-address {
       position: absolute;
       left: 50%;
-      top: 50%;
+      top: 38%;
       transform: translate(-50%, -50%);
       color: #ffffff;
       font-size: clamp(0.7rem, 1.6vw, 0.95rem);
@@ -159,6 +159,89 @@
     .contract-address.copied {
       color: #4ade80;
     }
+
+    .copy-pill {
+      position: absolute;
+      left: 50%;
+      top: 63.2%;
+      transform: translate(-50%, -50%);
+      background:
+        linear-gradient(180deg, #ffd84a 0%, #e6a615 55%, #a66a00 100%);
+      color: #3a1500;
+      font-family: inherit;
+      font-size: clamp(0.7rem, 1.3vw, 0.88rem);
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      border: 1px solid rgba(255, 236, 150, 0.7);
+      border-radius: 999px;
+      padding: 8px 24px;
+      cursor: pointer;
+      text-shadow: 0 1px 0 rgba(255, 220, 120, 0.6);
+      box-shadow:
+        0 4px 10px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        inset 0 -4px 8px rgba(120, 60, 0, 0.3);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+      z-index: 2;
+      white-space: nowrap;
+    }
+
+    .copy-pill:hover {
+      transform: translate(-50%, -50%) scale(1.06);
+      filter: brightness(1.08);
+      box-shadow:
+        0 6px 14px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        inset 0 -4px 8px rgba(120, 60, 0, 0.3);
+    }
+
+    .copy-pill:active {
+      transform: translate(-50%, -50%) scale(0.96);
+    }
+
+    .copy-pill.copied {
+      background: linear-gradient(180deg, #86efac 0%, #22c55e 60%, #15803d 100%);
+      color: #052e13;
+      border-color: rgba(220, 252, 231, 0.8);
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      top: 32px;
+      left: 50%;
+      transform: translate(-50%, -20px);
+      z-index: 10000;
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      color: #ffffff;
+      padding: 14px 28px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .toast svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
@@ -168,13 +251,14 @@
       <!-- Contract Address -->
       <div class="contract-box" onclick="copyCA()" role="button" tabindex="0" aria-label="Copy contract address">
         <img src="backgroundimage/cabox.png" alt="Contract Address" />
-        <span class="contract-address" id="ca-text">YOUR_SOLANA_CONTRACT_ADDRESS_HERE</span>
+        <span class="contract-address" id="ca-text">38AL8ERrUYdyfcDwGyBgXdDZKje3jvMAAM5PvJzSpump</span>
+        <button type="button" class="copy-pill" id="copy-pill" onclick="event.stopPropagation(); copyCA();">COPY</button>
       </div>
 
     </div>
 
     <!-- Floating Buy Now button (bottom-left) -->
-    <a class="btn-float btn-buynow" href="https://pump.fun" target="_blank" rel="noopener" aria-label="Buy Now">
+    <a class="btn-float btn-buynow" href="https://pump.fun/coin/38AL8ERrUYdyfcDwGyBgXdDZKje3jvMAAM5PvJzSpump" target="_blank" rel="noopener" aria-label="Buy Now">
       <img src="backgroundimage/buynow.png?v=2" alt="Buy Now" />
     </a>
 
@@ -186,18 +270,48 @@
 
   <canvas id="trail"></canvas>
 
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+    </svg>
+    <span>Copied to clipboard!</span>
+  </div>
+
   <script>
+    const CA = '38AL8ERrUYdyfcDwGyBgXdDZKje3jvMAAM5PvJzSpump';
+    let toastTimer = null;
+    let pillTimer = null;
+
+    function flashPill() {
+      const pill = document.getElementById('copy-pill');
+      if (!pill) return;
+      pill.textContent = 'COPIED!';
+      pill.classList.add('copied');
+      clearTimeout(pillTimer);
+      pillTimer = setTimeout(() => {
+        pill.textContent = 'COPY';
+        pill.classList.remove('copied');
+      }, 1800);
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+      flashPill();
+    }
+
     function copyCA() {
-      const el = document.getElementById('ca-text');
-      const ca = el.dataset.ca || el.textContent;
-      if (!el.dataset.ca) el.dataset.ca = ca;
-      navigator.clipboard.writeText(ca).then(() => {
-        el.textContent = 'COPIED!';
-        el.classList.add('copied');
-        setTimeout(() => {
-          el.textContent = el.dataset.ca;
-          el.classList.remove('copied');
-        }, 1500);
+      navigator.clipboard.writeText(CA).then(showToast).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = CA;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); showToast(); } catch {}
+        document.body.removeChild(ta);
       });
     }
 
