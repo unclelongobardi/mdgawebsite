@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>$MDGA - Make Dubai Great Again</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial Black', 'Arial Bold', Arial, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .hero {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      background-image: url('backgroundimage/bacjground.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 60px;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.05) 0%,
+        rgba(0, 0, 0, 0.45) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* Cursor trail canvas */
+    #trail {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      width: 100%;
+      max-width: 520px;
+      padding: 0 20px;
+    }
+
+    /* Floating corner buttons (Buy Now + Twitter) */
+    .btn-float {
+      position: fixed;
+      bottom: 32px;
+      z-index: 10;
+      width: 300px;
+      max-width: 38vw;
+      padding: 0;
+      background: transparent;
+      border: none;
+      line-height: 0;
+      transition: transform 0.2s ease, filter 0.2s ease;
+      filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45));
+    }
+
+    .btn-float img {
+      width: 100%;
+      height: auto;
+      display: block;
+      image-rendering: -webkit-optimize-contrast;
+    }
+
+    .btn-float:hover {
+      transform: translateY(-3px) scale(1.03);
+      filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.55));
+    }
+
+    .btn-float:active {
+      transform: translateY(-1px) scale(1);
+    }
+
+    .btn-buynow  { left: 32px; }
+    .btn-twitter { right: 32px; }
+
+    @media (max-width: 600px) {
+      .btn-float {
+        bottom: 16px;
+        width: 200px;
+      }
+      .btn-buynow  { left: 16px; }
+      .btn-twitter { right: 16px; }
+    }
+
+    .contract-box {
+      position: relative;
+      width: 100%;
+      cursor: pointer;
+      line-height: 0;
+      transition: transform 0.15s ease, filter 0.15s ease;
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.4));
+    }
+
+    .contract-box:hover {
+      transform: translateY(-2px);
+      filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
+    }
+
+    .contract-box:active {
+      transform: translateY(0);
+    }
+
+    .contract-box img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .contract-address {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      color: #ffffff;
+      font-size: clamp(0.7rem, 1.6vw, 0.95rem);
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      max-width: 85%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: center;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .contract-address.copied {
+      color: #4ade80;
+    }
+  </style>
+</head>
+<body>
+  <section class="hero">
+    <div class="content">
+
+      <!-- Contract Address -->
+      <div class="contract-box" onclick="copyCA()" role="button" tabindex="0" aria-label="Copy contract address">
+        <img src="backgroundimage/cabox.png" alt="Contract Address" />
+        <span class="contract-address" id="ca-text">YOUR_SOLANA_CONTRACT_ADDRESS_HERE</span>
+      </div>
+
+    </div>
+
+    <!-- Floating Buy Now button (bottom-left) -->
+    <a class="btn-float btn-buynow" href="https://pump.fun" target="_blank" rel="noopener" aria-label="Buy Now">
+      <img src="backgroundimage/buynow.png?v=2" alt="Buy Now" />
+    </a>
+
+    <!-- Floating Twitter button (bottom-right) -->
+    <a class="btn-float btn-twitter" href="https://x.com/MakeDubaiGAgain" target="_blank" rel="noopener" aria-label="Twitter / X">
+      <img src="backgroundimage/twitterbutton.png" alt="Twitter / X" />
+    </a>
+  </section>
+
+  <canvas id="trail"></canvas>
+
+  <script>
+    function copyCA() {
+      const el = document.getElementById('ca-text');
+      const ca = el.dataset.ca || el.textContent;
+      if (!el.dataset.ca) el.dataset.ca = ca;
+      navigator.clipboard.writeText(ca).then(() => {
+        el.textContent = 'COPIED!';
+        el.classList.add('copied');
+        setTimeout(() => {
+          el.textContent = el.dataset.ca;
+          el.classList.remove('copied');
+        }, 1500);
+      });
+    }
+
+    /* ---- Red cursor trail ---- */
+    (() => {
+      const canvas = document.getElementById('trail');
+      const ctx = canvas.getContext('2d');
+      let dpr = Math.max(1, window.devicePixelRatio || 1);
+      let w = 0, h = 0;
+
+      function resize() {
+        dpr = Math.max(1, window.devicePixelRatio || 1);
+        w = window.innerWidth;
+        h = window.innerHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      const particles = [];
+      const MAX_PARTICLES = 400;
+      let lastX = null, lastY = null;
+
+      function spawn(x, y, dx, dy) {
+        const speed = Math.hypot(dx, dy);
+        const count = Math.min(4, 1 + Math.floor(speed / 8));
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spread = 0.6 + Math.random() * 0.9;
+          particles.push({
+            x: x + (Math.random() - 0.5) * 4,
+            y: y + (Math.random() - 0.5) * 4,
+            vx: Math.cos(angle) * spread + dx * 0.08,
+            vy: Math.sin(angle) * spread + dy * 0.08,
+            life: 1,
+            decay: 0.018 + Math.random() * 0.02,
+            size: 10 + Math.random() * 14,
+          });
+        }
+        if (particles.length > MAX_PARTICLES) {
+          particles.splice(0, particles.length - MAX_PARTICLES);
+        }
+      }
+
+      window.addEventListener('mousemove', (e) => {
+        const x = e.clientX, y = e.clientY;
+        const dx = lastX === null ? 0 : x - lastX;
+        const dy = lastY === null ? 0 : y - lastY;
+        lastX = x; lastY = y;
+        spawn(x, y, dx, dy);
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        const t = e.touches[0];
+        if (!t) return;
+        const x = t.clientX, y = t.clientY;
+        const dx = lastX === null ? 0 : x - lastX;
+        const dy = lastY === null ? 0 : y - lastY;
+        lastX = x; lastY = y;
+        spawn(x, y, dx, dy);
+      }, { passive: true });
+
+      function frame() {
+        ctx.clearRect(0, 0, w, h);
+        ctx.globalCompositeOperation = 'lighter';
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vx *= 0.94;
+          p.vy *= 0.94;
+          p.life -= p.decay;
+          if (p.life <= 0) {
+            particles.splice(i, 1);
+            continue;
+          }
+          const r = p.size * p.life;
+          const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+          g.addColorStop(0,   `rgba(255, 80, 60, ${0.55 * p.life})`);
+          g.addColorStop(0.4, `rgba(220, 20, 20, ${0.35 * p.life})`);
+          g.addColorStop(1,   'rgba(120, 0, 0, 0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.globalCompositeOperation = 'source-over';
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
