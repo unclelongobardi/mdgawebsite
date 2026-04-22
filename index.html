@@ -249,10 +249,10 @@
     <div class="content">
 
       <!-- Contract Address -->
-      <div class="contract-box" role="button" tabindex="0" aria-label="Contract address">
+      <div class="contract-box" onclick="copyCA()" role="button" tabindex="0" aria-label="Copy contract address">
         <img src="backgroundimage/cabox.png" alt="Contract Address" />
-        <span class="contract-address" id="ca-text">38AL8ERrUYdyfcDwGyBgXdDZKje3jvMAAM5PvJzSpump</span>
-        <button type="button" class="copy-pill" id="copy-pill" onclick="event.stopPropagation();">COPY</button>
+        <span class="contract-address" id="ca-text">9Bk4Noe81WSHDm3tciyY5qGsKLRRXirdE3eMrVqPdoge</span>
+        <button type="button" class="copy-pill" id="copy-pill" onclick="event.stopPropagation(); copyCA();">COPY</button>
       </div>
 
     </div>
@@ -278,7 +278,7 @@
   </div>
 
   <script>
-    const CA = '38AL8ERrUYdyfcDwGyBgXdDZKje3jvMAAM5PvJzSpump';
+    const CA = '9Bk4Noe81WSHDm3tciyY5qGsKLRRXirdE3eMrVqPdoge';
     let toastTimer = null;
     let pillTimer = null;
 
